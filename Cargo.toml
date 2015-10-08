@@ -1,0 +1,9 @@
+[package]
+
+name = "hello_world"
+version = "0.0.1"
+authors = [ "Slava Baginov <slnpacifist@gmail.com>" ]
+
+[dependencies]
+iron = "0.2"
+route-recognizer = "0.1"
