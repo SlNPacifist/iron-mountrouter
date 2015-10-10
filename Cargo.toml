@@ -1,9 +1,13 @@
 [package]
-
-name = "hello_world"
+name = "iron-mountrouter"
 version = "0.0.1"
 authors = [ "Slava Baginov <slnpacifist@gmail.com>" ]
+license = "MIT"
+description = "A router with mounting (stripping matched part) capabilities"
+repository = "https://github.com/SlNPacifist/iron-mountrouter"
+
 
 [dependencies]
 iron = "0.2"
-route-recognizer = "0.1"
+route-recognizer = {version = "0.1", git = "https://github.com/SlNPacifist/route-recognizer.rs" }
+url = "0.2"
