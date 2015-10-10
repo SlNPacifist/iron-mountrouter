@@ -2,7 +2,8 @@ extern crate iron;
 extern crate iron_mountrouter;
 
 // To run, $ cargo run --example simple
-// To use, go to http://127.0.0.1:3000/test
+// To use, go to http://127.0.0.1:3000/test/me/
+// or http://127.0.0.1:3000/page/7/delete/entrance/
 
 use iron::{Iron, Request, Response, IronResult};
 use iron::status;
