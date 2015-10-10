@@ -6,7 +6,7 @@ extern crate iron_mountrouter;
 
 use iron::{Iron, Request, Response, IronResult};
 use iron::status;
-use iron_mountrouter::{Router};
+use iron_mountrouter::{Router, OriginalUrl};
 
 fn main() {
     let mut router = Router::new();
@@ -23,6 +23,14 @@ fn main() {
     fn handler(req: &mut Request) -> IronResult<Response> {
         let ref query = req.extensions.get::<Router>()
             .unwrap();
-        Ok(Response::with((status::Ok, format!("Url: {:?}\nQuery params: {:?}", req.url.path, *query))))
+        Ok(Response::with((
+			status::Ok,
+			format!(
+				"Url: {:?}\nQuery params: {:?}\nOriginal url: {:?}",
+				req.url.path,
+				*query,
+				req.extensions.get::<OriginalUrl>()
+			)
+		)))
     }
 }

@@ -6,7 +6,7 @@ use std::error::Error;
 use std::fmt;
 use std::collections::BTreeMap;
 
-use iron::{Request, Response, Handler, IronResult, IronError};
+use iron::{Request, Response, Handler, IronResult, IronError, Url};
 use iron::status;
 use iron::typemap::Key;
 
@@ -71,7 +71,6 @@ impl Router {
     			p.insert(name.to_string(), params[name.as_ref()].clone());
 			}
     	}
-    	println!("{:?}", p);
     }
 }
 
@@ -85,6 +84,9 @@ impl Handler for Router {
 	            if matched.handler.is_mounted {
 	            	let leftover = "/".to_string() + &matched.params[LEFTOVER_PARAM_NAME];
 	            	let (new_path, _, _) = parse_path(&leftover).unwrap();
+			        if !req.extensions.contains::<OriginalUrl>() {
+			            req.extensions.insert::<OriginalUrl>(req.url.clone());
+			        }
 	            	req.url.path = new_path;
 	            }
             	Router::append_params(req, &matched.params);
@@ -94,6 +96,10 @@ impl Handler for Router {
         }
     }
 }
+
+#[derive(Copy, Clone)]
+pub struct OriginalUrl;
+impl Key for OriginalUrl { type Value = Url; }
 
 #[derive(Debug)]
 pub struct NoRoute;
