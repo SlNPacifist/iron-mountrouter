@@ -3,8 +3,9 @@ name = "iron-mountrouter"
 version = "0.0.1"
 authors = [ "Slava Baginov <slnpacifist@gmail.com>" ]
 license = "MIT"
-description = "A router with mounting (stripping matched part) capabilities"
+description = "A router with mounting (stripping matched part) capabilities for the Iron framework"
 repository = "https://github.com/SlNPacifist/iron-mountrouter"
+keywords = ["iron", "web", "http", "routing", "router", "mounting", "mounter", "rest"]
 
 
 [dependencies]

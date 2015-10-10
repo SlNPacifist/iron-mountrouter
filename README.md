@@ -10,6 +10,19 @@ functionality.
 Mount only works with predefined strings and cannot be used like django's
 router to strip matched part of query for further handlers.
 
-Router is a fast, convenient, and flexible routing middleware for Iron. It
-allows complex glob patterns and named url parameters and also allows handlers
-to be any Handler, including all Chains.
+## Router does not accept http method, why is that?
+Usually routers restrict developer to specifiy method. Mountrouter enforces REST
+ideology: you first identify resource using path and then perform action
+based on method. MethodPicker struct allows developer to specify handler for
+http methods.
+
+## Installation
+If you're using cargo, just add router to your `Cargo.toml`.
+
+```toml
+[dependencies]
+
+iron-mountrouter = { git = https://github.com/SlNPacifist/iron-mountrouter, version = "*" }
+```
+
+Otherwise, `cargo build`, and the rlib will be in your `target` directory.
