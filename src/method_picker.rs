@@ -37,6 +37,48 @@ impl MethodPicker {
 		self
 	}
 	
+	/// Adds new handler for GET http method to picker
+	pub fn get<H: Handler>(&mut self, handler: H) -> &mut MethodPicker {
+		self.handlers.push((Some(Method::Get), Box::new(handler)));
+		self
+	}
+	
+	/// Adds new handler for POST http method to picker
+	pub fn post<H: Handler>(&mut self, handler: H) -> &mut MethodPicker {
+		self.handlers.push((Some(Method::Post), Box::new(handler)));
+		self
+	}
+	
+	/// Adds new handler for PUT http method to picker
+	pub fn put<H: Handler>(&mut self, handler: H) -> &mut MethodPicker {
+		self.handlers.push((Some(Method::Put), Box::new(handler)));
+		self
+	}
+	
+	/// Adds new handler for DELETE http method to picker
+	pub fn delete<H: Handler>(&mut self, handler: H) -> &mut MethodPicker {
+		self.handlers.push((Some(Method::Delete), Box::new(handler)));
+		self
+	}
+	
+	/// Adds new handler for HEAD http method to picker
+	pub fn head<H: Handler>(&mut self, handler: H) -> &mut MethodPicker {
+		self.handlers.push((Some(Method::Head), Box::new(handler)));
+		self
+	}
+	
+	/// Adds new handler for PATCH http method to picker
+	pub fn patch<H: Handler>(&mut self, handler: H) -> &mut MethodPicker {
+		self.handlers.push((Some(Method::Patch), Box::new(handler)));
+		self
+	}
+	
+	/// Adds new handler for OPTIONS http method to picker
+	pub fn options<H: Handler>(&mut self, handler: H) -> &mut MethodPicker {
+		self.handlers.push((Some(Method::Options), Box::new(handler)));
+		self
+	}
+	
 	/// Adds default handler to picker which will be used if no method matched
 	pub fn default<H: Handler>(&mut self, handler: H) -> &mut MethodPicker {
 		self.handlers.push((None, Box::new(handler)));

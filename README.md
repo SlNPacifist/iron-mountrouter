@@ -22,7 +22,14 @@ If you're using cargo, just add router to your `Cargo.toml`.
 ```toml
 [dependencies]
 
-iron-mountrouter = { git = https://github.com/SlNPacifist/iron-mountrouter, version = "*" }
+iron-mountrouter = { git = "https://github.com/SlNPacifist/iron-mountrouter", version = "*" }
+```
+
+Then in your `main.rs`
+
+```
+extern crate iron_mountrouter;
+use iron_mountrouter::{Router, MethodPicker};
 ```
 
 Otherwise, `cargo build`, and the rlib will be in your `target` directory.
