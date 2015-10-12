@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Router` struct in crate `iron_mountrouter`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Router">
+
+    <title>iron_mountrouter::Router - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../main.css">
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <section class="sidebar">
+        
+        <p class='location'><a href='index.html'>iron_mountrouter</a></p><script>window.sidebarCurrent = {name: 'Router', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </section>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>iron_mountrouter</a>::<wbr><a class='struct' href=''>Router</a></span><span class='out-of-band'><span id='render-detail'>
+            <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                [<span class='inner'>&#x2212;</span>]
+            </a>
+        </span><a id='src-260' class='srclink' href='../src/iron_mountrouter/mount_router.rs.html#31-33' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Router {
+    // some fields omitted
+}</pre><div class='docblock'><p><code>Router</code> provides an interface to apply different handlers to different routes as middleware for
+the Iron framework.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl <a class='struct' href='../iron_mountrouter/struct.Router.html' title='iron_mountrouter::Router'>Router</a></code></h3><div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>() -&gt; <a class='struct' href='../iron_mountrouter/struct.Router.html' title='iron_mountrouter::Router'>Router</a></code></h4>
+<div class='docblock'><p>Construct new <code>Router</code>.</p>
+<pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='ident'>router</span> <span class='op'>=</span> <span class='ident'>Router</span>::<span class='ident'>new</span>();</pre>
+</div><h4 id='method.add_route' class='method'><code>fn <a href='#method.add_route' class='fnname'>add_route</a>&lt;H, S&gt;(&amp;mut self, route: S, handler: H, is_mounted: <a href='http://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>) -&gt; &amp;mut <a class='struct' href='../iron_mountrouter/struct.Router.html' title='iron_mountrouter::Router'>Router</a> <span class='where'>where H: <a class='trait' href='http://ironframework.io/core/iron/iron/middleware/trait.Handler.html' title='iron::middleware::Handler'>Handler</a>, S: <a class='trait' href='http://doc.rust-lang.org/nightly/core/convert/trait.AsRef.html' title='core::convert::AsRef'>AsRef</a>&lt;<a href='http://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>&gt;</span></code></h4>
+<div class='docblock'><p>Add a new route to a <code>Router</code>, matching given pattern.</p>
+
+<p><code>route</code> is a pattern supported by <a href="https://crates.io/crates/route-recognizer">route recognizer</a>:</p>
+
+<p>string like <code>/static/page/here</code> is matched entirely;</p>
+
+<p><code>:name</code> is a dynamic param, matching any string that does not contain slash <code>/</code>, i.e.</p>
+
+<p><code>/page/:page-num/content</code> will match <code>/page/17/content</code> or <code>/page/abbra-t/content</code>
+but not <code>/page/17/5/content</code>.</p>
+
+<p>Colon only works at the start of the segment so <code>/page-:num</code> works like usual string match
+and will not match <code>/page-5</code>.</p>
+
+<p>Currently there is no way to set param type so it catches only strings and does not perform
+any additional checks.</p>
+
+<p><code>*name</code> is a dynamic wildcard param, matching any string (even those containing slashes<code>/</code>).
+<code>/redirect/to/*path</code> will match <code>/redirect/to/example.com/example</code>.</p>
+
+<p>Captured parameters are stored in <a href="type.Params.html">Params</a> type and can be accessed
+in request extensions:</p>
+<pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='kw-2'>ref</span> <span class='ident'>params</span> <span class='op'>=</span> <span class='ident'>req</span>.<span class='ident'>extensions</span>.<span class='ident'>get</span>::<span class='op'>&lt;</span><span class='ident'>Router</span><span class='op'>&gt;</span>().<span class='ident'>unwrap</span>()</pre>
+
+<p>Unwrap is safe here because router always adds extension if route is matched, even if no
+params were captured.</p>
+
+<p><code>handler</code> is any <a href="http://ironframework.io/doc/iron/middleware/trait.Handler.html">Iron handler</a>. Working with mountrouter
+you will most often use <a href="struct.MethodPicker.html">MethodPicker</a> to pick appropriate
+handler for given http method.</p>
+
+<p>If <code>is_mounted</code> is true, router will strip matched part of the request url. Unlike <a href="http://ironframework.io/doc/mount/index.html">Mount</a> middleware from the Iron&#39;s core bundle, this
+parameter allows you to strip dynamical (e.g. with dynamic params) strings from request
+path. Original url is stored in request extensions using <code>OriginalUrl</code>. For example,</p>
+<pre class='rust rust-example-rendered'>
+<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>router</span> <span class='op'>=</span> <span class='ident'>Router</span>::<span class='ident'>new</span>();
+<span class='ident'>router</span>.<span class='ident'>add_route</span>(<span class='string'>&quot;/book/:page/&quot;</span>, <span class='ident'>handler</span>, <span class='boolval'>true</span>);
+<span class='kw'>fn</span> <span class='ident'>handler</span>(<span class='ident'>req</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>Request</span>) <span class='op'>-&gt;</span> <span class='ident'>IronResult</span><span class='op'>&lt;</span><span class='ident'>Response</span><span class='op'>&gt;</span> {
+    <span class='comment'>// for path &quot;/book/17/page/3&quot;</span>
+
+    <span class='comment'>// [&quot;page&quot;, &quot;3&quot;]</span>
+    <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;{:?}&quot;</span>, <span class='ident'>req</span>.<span class='ident'>url</span>.<span class='ident'>path</span>);
+    <span class='comment'>// [&quot;book&quot;, &quot;17&quot;, &quot;page&quot;, &quot;3&quot;]</span>
+    <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;{:?}&quot;</span>, <span class='ident'>req</span>.<span class='ident'>extensions</span>.<span class='ident'>get</span>::<span class='op'>&lt;</span><span class='ident'>OriginalUrl</span><span class='op'>&gt;</span>().<span class='ident'>unwrap</span>().<span class='ident'>path</span>);
+}</pre>
+
+<p>If <code>is_mounted</code> is set, route is forced to end with slash: slash is appended to the end of
+route if it is not there.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><code>impl Key for <a class='struct' href='../iron_mountrouter/struct.Router.html' title='iron_mountrouter::Router'>Router</a></code></h3><div class='impl-items'><h4 id='assoc_type.Value' class='type'><code>type Value = <a class='type' href='../iron_mountrouter/type.Params.html' title='iron_mountrouter::Params'>Params</a></code></h4>
+</div><h3 class='impl'><code>impl <a class='trait' href='http://ironframework.io/core/iron/iron/middleware/trait.Handler.html' title='iron::middleware::Handler'>Handler</a> for <a class='struct' href='../iron_mountrouter/struct.Router.html' title='iron_mountrouter::Router'>Router</a></code></h3><div class='impl-items'><h4 id='method.handle' class='method'><code>fn <a href='http://ironframework.io/core/iron/iron/middleware/trait.Handler.html#method.handle' class='fnname'>handle</a>(&amp;self, req: &amp;mut <a class='struct' href='http://ironframework.io/core/iron/iron/request/struct.Request.html' title='iron::request::Request'>Request</a>) -&gt; <a class='type' href='http://ironframework.io/core/iron/iron/type.IronResult.html' title='iron::IronResult'>IronResult</a>&lt;<a class='struct' href='http://ironframework.io/core/iron/iron/response/struct.Response.html' title='iron::response::Response'>Response</a>&gt;</code></h4>
+</div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <div id="help" class="hidden">
+        <div>
+            <div class="shortcuts">
+                <h1>Keyboard Shortcuts</h1>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h1>Search Tricks</h1>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>typedef</code> (or
+                    <code>tdef</code>).
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code>)
+                </p>
+            </div>
+        </div>
+    </div>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "iron_mountrouter";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script async src="../search-index.js"></script>
+</body>
+</html>

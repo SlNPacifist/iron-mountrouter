@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["MethodPicker","`MethodPicker` provides an interface to apply different handlers for different http methods as middleware for the Iron framework."],["NoMethod","`NoMethod` is error type returned to Iron if no handler was matched in MethodPicker"]]});
