@@ -81,10 +81,9 @@ impl Router {
     /// you will most often use [MethodPicker](struct.MethodPicker.html) to pick appropriate
     /// handler for given http method.
     ///
-    /// If `is_mounted` is true, router will strip matched part of the request url. Unlike [Mount]
-    /// (http://ironframework.io/doc/mount/index.html) middleware from the Iron's core bundle, this
-    /// parameter allows you to strip dynamical (e.g. with dynamic params) strings from request
-    /// path. Original url is stored in request extensions using `OriginalUrl`. For example,
+    /// If `is_mounted` is true, router will match any string *starting* with route. Original url is
+    /// preserved, while stripped part is stored in request extensions using `StrippedUrl`. Further
+    /// `Router`s will used stripped url to match their routes. For example,
     ///
     /// ```ignore
     /// let mut router = Router::new();
@@ -92,10 +91,10 @@ impl Router {
     /// fn handler(req: &mut Request) -> IronResult<Response> {
     ///     // for path "/book/17/page/3"
     ///
-    ///     // ["page", "3"]
-    ///     println!("{:?}", req.url.path);
     ///     // ["book", "17", "page", "3"]
-    ///     println!("{:?}", req.extensions.get::<OriginalUrl>().unwrap().path);
+    ///     println!("{:?}", req.url.path);
+    ///     // ["page", "3"]
+    ///     println!("{:?}", req.extensions.get::<StrippedUrl>().unwrap().path);
     /// }
     /// ```
     /// If `is_mounted` is set, route is forced to end with slash: slash is appended to the end of
@@ -143,16 +142,21 @@ impl Key for Router { type Value = Params; }
 
 impl Handler for Router {
     fn handle(&self, req: &mut Request) -> IronResult<Response> {
-        let path = req.url.path.join("/");
+    	let path = if req.extensions.contains::<StrippedUrl>() {
+    		req.extensions.get::<StrippedUrl>().unwrap().path.join("/")
+    	} else {
+	        req.url.path.join("/")
+    	};
         match self.recognize(&path) {
         	Some(matched) => {
 	            if matched.handler.is_mounted {
 	            	let leftover = "/".to_string() + &matched.params[LEFTOVER_PARAM_NAME];
 	            	let (new_path, _, _) = parse_path(&leftover).unwrap();
-			        if !req.extensions.contains::<OriginalUrl>() {
-			            req.extensions.insert::<OriginalUrl>(req.url.clone());
+			        if !req.extensions.contains::<StrippedUrl>() {
+			        	let mut stripped_url = req.url.clone();
+			        	stripped_url.path = new_path;
+			            req.extensions.insert::<StrippedUrl>(stripped_url);
 			        }
-	            	req.url.path = new_path;
 	            }
             	Router::append_params(req, &matched.params);
 	            matched.handler.handler.handle(req)
@@ -163,15 +167,15 @@ impl Handler for Router {
 }
 
 
-/// `OriginalUrl` serves as a key in request extensions to original url if router strips url for
-/// mounted handlers.
+/// `StrippedUrl` serves as a key in request extensions. It contains non-matched part of url if 
+/// route was mounted
 ///
 /// ```ignore
-/// let ref original_url = req.extensions.get::<OriginalUrl>()
+/// let ref stripped_url = req.extensions.get::<StrippedUrl>()
 /// ```
 #[derive(Copy, Clone)]
-pub struct OriginalUrl;
-impl Key for OriginalUrl { type Value = Url; }
+pub struct StrippedUrl;
+impl Key for StrippedUrl { type Value = Url; }
 
 
 /// `NoRoute` is error type returned to Iron if no route was matched in Router
