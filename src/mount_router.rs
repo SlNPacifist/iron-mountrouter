@@ -14,6 +14,10 @@ use url::parse_path;
 
 const LEFTOVER_PARAM_NAME: &'static str = "mountrouter_leftover";
 
+// Can't use 0x00 here because route-recognizer does
+// let val = char as u32 - 1;
+const ENDSTRING: char = '\x01';
+
 /// `Params` is stored in request extensions and gives access to captured dynamic parameters
 ///
 /// ```ignore
@@ -23,13 +27,13 @@ pub type Params = BTreeMap<String, String>;
 
 struct RouteParams {
 	handler: Box<Handler>,
-	is_mounted: bool,
 }
 
 /// `Router` provides an interface to apply different handlers to different routes as middleware for
 /// the Iron framework.
 pub struct Router {
-    recognizer: Recognizer<RouteParams>
+    recognizer: Recognizer<RouteParams>,
+    mounted_recognizer: Recognizer<RouteParams>,
 }
 
 impl Router {
@@ -41,7 +45,8 @@ impl Router {
     /// ```
     pub fn new() -> Router {
         Router {
-            recognizer: Recognizer::new()
+            recognizer: Recognizer::new(),
+            mounted_recognizer: Recognizer::new(),
         }
     }
 
@@ -103,7 +108,6 @@ impl Router {
     where H: Handler, S: AsRef<str> {
     	let params = RouteParams {
     		handler: Box::new(handler),
-    		is_mounted: is_mounted
     	};
     	if is_mounted {
     		let r = route.as_ref();
@@ -114,15 +118,25 @@ impl Router {
 			}
     		modified_route.push('*');
     		modified_route.push_str(LEFTOVER_PARAM_NAME);
-	        self.recognizer.add(&modified_route, params);
+	        self.mounted_recognizer.add(&modified_route, params);
     	} else {
 	        self.recognizer.add(route.as_ref(), params);
     	}
         self
     }
 
-    fn recognize(&self, path: &str) -> Option<Match<&RouteParams>> {
-        self.recognizer.recognize(path).ok()
+    fn recognize(&self, path: &str) -> MatchResult<Match<&RouteParams>> {
+    	match self.recognizer.recognize(path) {
+    		Ok(res) => MatchResult::Direct(res),
+    		Err(_) => {
+    			let mut modified_path = path.to_string();
+    			modified_path.push(ENDSTRING);
+    			match self.mounted_recognizer.recognize(&modified_path) {
+    				Ok(res) => MatchResult::Mounted(res),
+    				Err(_) => MatchResult::None,
+    			}
+    		}
+    	}
     }
     
     fn append_params(req: &mut Request, params: &RecognizerParams) {
@@ -148,20 +162,25 @@ impl Handler for Router {
 	        req.url.path.join("/")
     	};
         match self.recognize(&path) {
-        	Some(matched) => {
-	            if matched.handler.is_mounted {
-	            	let leftover = "/".to_string() + &matched.params[LEFTOVER_PARAM_NAME];
-	            	let (new_path, _, _) = parse_path(&leftover).unwrap();
-			        if !req.extensions.contains::<StrippedUrl>() {
-			        	let mut stripped_url = req.url.clone();
-			        	stripped_url.path = new_path;
-			            req.extensions.insert::<StrippedUrl>(stripped_url);
-			        }
-	            }
+        	MatchResult::Direct(matched) => {
             	Router::append_params(req, &matched.params);
 	            matched.handler.handler.handle(req)
         	},
-        	None => Err(IronError::new(NoRoute, status::NotFound))
+        	MatchResult::Mounted(matched) => {
+        		let len = matched.params[LEFTOVER_PARAM_NAME].len();
+            	let leftover = "/".to_string() + &matched.params[LEFTOVER_PARAM_NAME][0 .. len - 1];
+            	let (new_path, _, _) = parse_path(&leftover).unwrap();
+		        if !req.extensions.contains::<StrippedUrl>() {
+		        	let mut stripped_url = req.url.clone();
+		        	stripped_url.path = new_path;
+		            req.extensions.insert::<StrippedUrl>(stripped_url);
+		        } else {
+		        	req.extensions.get_mut::<StrippedUrl>().unwrap().path = new_path;
+		        }
+            	Router::append_params(req, &matched.params);
+	            matched.handler.handler.handle(req)
+        	},
+        	MatchResult::None => Err(IronError::new(NoRoute, status::NotFound))
         }
     }
 }
@@ -190,4 +209,10 @@ impl fmt::Display for NoRoute {
 
 impl Error for NoRoute {
     fn description(&self) -> &str { "No Route" }
+}
+
+enum MatchResult<T> {
+	Direct(T),
+	Mounted(T),
+	None,
 }
