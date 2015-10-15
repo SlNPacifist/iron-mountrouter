@@ -229,6 +229,35 @@
 <span id="187">187</span>
 <span id="188">188</span>
 <span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
 </pre><pre class='rust '>
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>error</span>::<span class='ident'>Error</span>;
 <span class='kw'>use</span> <span class='ident'>std</span>::<span class='ident'>fmt</span>;
@@ -246,6 +275,10 @@
 
 <span class='kw'>const</span> <span class='ident'>LEFTOVER_PARAM_NAME</span>: <span class='kw-2'>&amp;</span><span class='lifetime'>&#39;static</span> <span class='ident'>str</span> <span class='op'>=</span> <span class='string'>&quot;mountrouter_leftover&quot;</span>;
 
+<span class='comment'>// Can&#39;t use 0x00 here because route-recognizer does</span>
+<span class='comment'>// let val = char as u32 - 1;</span>
+<span class='kw'>const</span> <span class='ident'>ENDSTRING</span>: <span class='ident'>char</span> <span class='op'>=</span> <span class='string'>&#39;\x01&#39;</span>;
+
 <span class='doccomment'>/// `Params` is stored in request extensions and gives access to captured dynamic parameters</span>
 <span class='doccomment'>///</span>
 <span class='doccomment'>/// ```ignore</span>
@@ -255,13 +288,13 @@
 
 <span class='kw'>struct</span> <span class='ident'>RouteParams</span> {
 	<span class='ident'>handler</span>: <span class='ident'>Box</span><span class='op'>&lt;</span><span class='ident'>Handler</span><span class='op'>&gt;</span>,
-	<span class='ident'>is_mounted</span>: <span class='ident'>bool</span>,
 }
 
 <span class='doccomment'>/// `Router` provides an interface to apply different handlers to different routes as middleware for</span>
 <span class='doccomment'>/// the Iron framework.</span>
 <span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>Router</span> {
-    <span class='ident'>recognizer</span>: <span class='ident'>Recognizer</span><span class='op'>&lt;</span><span class='ident'>RouteParams</span><span class='op'>&gt;</span>
+    <span class='ident'>recognizer</span>: <span class='ident'>Recognizer</span><span class='op'>&lt;</span><span class='ident'>RouteParams</span><span class='op'>&gt;</span>,
+    <span class='ident'>mounted_recognizer</span>: <span class='ident'>Recognizer</span><span class='op'>&lt;</span><span class='ident'>RouteParams</span><span class='op'>&gt;</span>,
 }
 
 <span class='kw'>impl</span> <span class='ident'>Router</span> {
@@ -273,7 +306,8 @@
     <span class='doccomment'>/// ```</span>
     <span class='kw'>pub</span> <span class='kw'>fn</span> <span class='ident'>new</span>() <span class='op'>-&gt;</span> <span class='ident'>Router</span> {
         <span class='ident'>Router</span> {
-            <span class='ident'>recognizer</span>: <span class='ident'>Recognizer</span>::<span class='ident'>new</span>()
+            <span class='ident'>recognizer</span>: <span class='ident'>Recognizer</span>::<span class='ident'>new</span>(),
+            <span class='ident'>mounted_recognizer</span>: <span class='ident'>Recognizer</span>::<span class='ident'>new</span>(),
         }
     }
 
@@ -313,10 +347,9 @@
     <span class='doccomment'>/// you will most often use [MethodPicker](struct.MethodPicker.html) to pick appropriate</span>
     <span class='doccomment'>/// handler for given http method.</span>
     <span class='doccomment'>///</span>
-    <span class='doccomment'>/// If `is_mounted` is true, router will strip matched part of the request url. Unlike [Mount]</span>
-    <span class='doccomment'>/// (http://ironframework.io/doc/mount/index.html) middleware from the Iron&#39;s core bundle, this</span>
-    <span class='doccomment'>/// parameter allows you to strip dynamical (e.g. with dynamic params) strings from request</span>
-    <span class='doccomment'>/// path. Original url is stored in request extensions using `OriginalUrl`. For example,</span>
+    <span class='doccomment'>/// If `is_mounted` is true, router will match any string *starting* with route. Original url is</span>
+    <span class='doccomment'>/// preserved, while stripped part is stored in request extensions using `StrippedUrl`. Further</span>
+    <span class='doccomment'>/// `Router`s will used stripped url to match their routes. For example,</span>
     <span class='doccomment'>///</span>
     <span class='doccomment'>/// ```ignore</span>
     <span class='doccomment'>/// let mut router = Router::new();</span>
@@ -324,10 +357,10 @@
     <span class='doccomment'>/// fn handler(req: &amp;mut Request) -&gt; IronResult&lt;Response&gt; {</span>
     <span class='doccomment'>///     // for path &quot;/book/17/page/3&quot;</span>
     <span class='doccomment'>///</span>
-    <span class='doccomment'>///     // [&quot;page&quot;, &quot;3&quot;]</span>
-    <span class='doccomment'>///     println!(&quot;{:?}&quot;, req.url.path);</span>
     <span class='doccomment'>///     // [&quot;book&quot;, &quot;17&quot;, &quot;page&quot;, &quot;3&quot;]</span>
-    <span class='doccomment'>///     println!(&quot;{:?}&quot;, req.extensions.get::&lt;OriginalUrl&gt;().unwrap().path);</span>
+    <span class='doccomment'>///     println!(&quot;{:?}&quot;, req.url.path);</span>
+    <span class='doccomment'>///     // [&quot;page&quot;, &quot;3&quot;]</span>
+    <span class='doccomment'>///     println!(&quot;{:?}&quot;, req.extensions.get::&lt;StrippedUrl&gt;().unwrap().path);</span>
     <span class='doccomment'>/// }</span>
     <span class='doccomment'>/// ```</span>
     <span class='doccomment'>/// If `is_mounted` is set, route is forced to end with slash: slash is appended to the end of</span>
@@ -336,7 +369,6 @@
     <span class='kw'>where</span> <span class='ident'>H</span>: <span class='ident'>Handler</span>, <span class='ident'>S</span>: <span class='ident'>AsRef</span><span class='op'>&lt;</span><span class='ident'>str</span><span class='op'>&gt;</span> {
     	<span class='kw'>let</span> <span class='ident'>params</span> <span class='op'>=</span> <span class='ident'>RouteParams</span> {
     		<span class='ident'>handler</span>: <span class='ident'>Box</span>::<span class='ident'>new</span>(<span class='ident'>handler</span>),
-    		<span class='ident'>is_mounted</span>: <span class='ident'>is_mounted</span>
     	};
     	<span class='kw'>if</span> <span class='ident'>is_mounted</span> {
     		<span class='kw'>let</span> <span class='ident'>r</span> <span class='op'>=</span> <span class='ident'>route</span>.<span class='ident'>as_ref</span>();
@@ -347,15 +379,25 @@
 			}
     		<span class='ident'>modified_route</span>.<span class='ident'>push</span>(<span class='string'>&#39;*&#39;</span>);
     		<span class='ident'>modified_route</span>.<span class='ident'>push_str</span>(<span class='ident'>LEFTOVER_PARAM_NAME</span>);
-	        <span class='self'>self</span>.<span class='ident'>recognizer</span>.<span class='ident'>add</span>(<span class='kw-2'>&amp;</span><span class='ident'>modified_route</span>, <span class='ident'>params</span>);
+	        <span class='self'>self</span>.<span class='ident'>mounted_recognizer</span>.<span class='ident'>add</span>(<span class='kw-2'>&amp;</span><span class='ident'>modified_route</span>, <span class='ident'>params</span>);
     	} <span class='kw'>else</span> {
 	        <span class='self'>self</span>.<span class='ident'>recognizer</span>.<span class='ident'>add</span>(<span class='ident'>route</span>.<span class='ident'>as_ref</span>(), <span class='ident'>params</span>);
     	}
         <span class='self'>self</span>
     }
 
-    <span class='kw'>fn</span> <span class='ident'>recognize</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>path</span>: <span class='kw-2'>&amp;</span><span class='ident'>str</span>) <span class='op'>-&gt;</span> <span class='prelude-ty'>Option</span><span class='op'>&lt;</span><span class='ident'>Match</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='ident'>RouteParams</span><span class='op'>&gt;&gt;</span> {
-        <span class='self'>self</span>.<span class='ident'>recognizer</span>.<span class='ident'>recognize</span>(<span class='ident'>path</span>).<span class='ident'>ok</span>()
+    <span class='kw'>fn</span> <span class='ident'>recognize</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>path</span>: <span class='kw-2'>&amp;</span><span class='ident'>str</span>) <span class='op'>-&gt;</span> <span class='ident'>MatchResult</span><span class='op'>&lt;</span><span class='ident'>Match</span><span class='op'>&lt;</span><span class='kw-2'>&amp;</span><span class='ident'>RouteParams</span><span class='op'>&gt;&gt;</span> {
+    	<span class='kw'>match</span> <span class='self'>self</span>.<span class='ident'>recognizer</span>.<span class='ident'>recognize</span>(<span class='ident'>path</span>) {
+    		<span class='prelude-val'>Ok</span>(<span class='ident'>res</span>) <span class='op'>=&gt;</span> <span class='ident'>MatchResult</span>::<span class='ident'>Direct</span>(<span class='ident'>res</span>),
+    		<span class='prelude-val'>Err</span>(_) <span class='op'>=&gt;</span> {
+    			<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>modified_path</span> <span class='op'>=</span> <span class='ident'>path</span>.<span class='ident'>to_string</span>();
+    			<span class='ident'>modified_path</span>.<span class='ident'>push</span>(<span class='ident'>ENDSTRING</span>);
+    			<span class='kw'>match</span> <span class='self'>self</span>.<span class='ident'>mounted_recognizer</span>.<span class='ident'>recognize</span>(<span class='kw-2'>&amp;</span><span class='ident'>modified_path</span>) {
+    				<span class='prelude-val'>Ok</span>(<span class='ident'>res</span>) <span class='op'>=&gt;</span> <span class='ident'>MatchResult</span>::<span class='ident'>Mounted</span>(<span class='ident'>res</span>),
+    				<span class='prelude-val'>Err</span>(_) <span class='op'>=&gt;</span> <span class='ident'>MatchResult</span>::<span class='prelude-val'>None</span>,
+    			}
+    		}
+    	}
     }
     
     <span class='kw'>fn</span> <span class='ident'>append_params</span>(<span class='ident'>req</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>Request</span>, <span class='ident'>params</span>: <span class='kw-2'>&amp;</span><span class='ident'>RecognizerParams</span>) {
@@ -375,35 +417,45 @@
 
 <span class='kw'>impl</span> <span class='ident'>Handler</span> <span class='kw'>for</span> <span class='ident'>Router</span> {
     <span class='kw'>fn</span> <span class='ident'>handle</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>, <span class='ident'>req</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>Request</span>) <span class='op'>-&gt;</span> <span class='ident'>IronResult</span><span class='op'>&lt;</span><span class='ident'>Response</span><span class='op'>&gt;</span> {
-        <span class='kw'>let</span> <span class='ident'>path</span> <span class='op'>=</span> <span class='ident'>req</span>.<span class='ident'>url</span>.<span class='ident'>path</span>.<span class='ident'>join</span>(<span class='string'>&quot;/&quot;</span>);
+    	<span class='kw'>let</span> <span class='ident'>path</span> <span class='op'>=</span> <span class='kw'>if</span> <span class='ident'>req</span>.<span class='ident'>extensions</span>.<span class='ident'>contains</span>::<span class='op'>&lt;</span><span class='ident'>StrippedUrl</span><span class='op'>&gt;</span>() {
+    		<span class='ident'>req</span>.<span class='ident'>extensions</span>.<span class='ident'>get</span>::<span class='op'>&lt;</span><span class='ident'>StrippedUrl</span><span class='op'>&gt;</span>().<span class='ident'>unwrap</span>().<span class='ident'>path</span>.<span class='ident'>join</span>(<span class='string'>&quot;/&quot;</span>)
+    	} <span class='kw'>else</span> {
+	        <span class='ident'>req</span>.<span class='ident'>url</span>.<span class='ident'>path</span>.<span class='ident'>join</span>(<span class='string'>&quot;/&quot;</span>)
+    	};
         <span class='kw'>match</span> <span class='self'>self</span>.<span class='ident'>recognize</span>(<span class='kw-2'>&amp;</span><span class='ident'>path</span>) {
-        	<span class='prelude-val'>Some</span>(<span class='ident'>matched</span>) <span class='op'>=&gt;</span> {
-	            <span class='kw'>if</span> <span class='ident'>matched</span>.<span class='ident'>handler</span>.<span class='ident'>is_mounted</span> {
-	            	<span class='kw'>let</span> <span class='ident'>leftover</span> <span class='op'>=</span> <span class='string'>&quot;/&quot;</span>.<span class='ident'>to_string</span>() <span class='op'>+</span> <span class='kw-2'>&amp;</span><span class='ident'>matched</span>.<span class='ident'>params</span>[<span class='ident'>LEFTOVER_PARAM_NAME</span>];
-	            	<span class='kw'>let</span> (<span class='ident'>new_path</span>, _, _) <span class='op'>=</span> <span class='ident'>parse_path</span>(<span class='kw-2'>&amp;</span><span class='ident'>leftover</span>).<span class='ident'>unwrap</span>();
-			        <span class='kw'>if</span> <span class='op'>!</span><span class='ident'>req</span>.<span class='ident'>extensions</span>.<span class='ident'>contains</span>::<span class='op'>&lt;</span><span class='ident'>OriginalUrl</span><span class='op'>&gt;</span>() {
-			            <span class='ident'>req</span>.<span class='ident'>extensions</span>.<span class='ident'>insert</span>::<span class='op'>&lt;</span><span class='ident'>OriginalUrl</span><span class='op'>&gt;</span>(<span class='ident'>req</span>.<span class='ident'>url</span>.<span class='ident'>clone</span>());
-			        }
-	            	<span class='ident'>req</span>.<span class='ident'>url</span>.<span class='ident'>path</span> <span class='op'>=</span> <span class='ident'>new_path</span>;
-	            }
+        	<span class='ident'>MatchResult</span>::<span class='ident'>Direct</span>(<span class='ident'>matched</span>) <span class='op'>=&gt;</span> {
             	<span class='ident'>Router</span>::<span class='ident'>append_params</span>(<span class='ident'>req</span>, <span class='kw-2'>&amp;</span><span class='ident'>matched</span>.<span class='ident'>params</span>);
 	            <span class='ident'>matched</span>.<span class='ident'>handler</span>.<span class='ident'>handler</span>.<span class='ident'>handle</span>(<span class='ident'>req</span>)
         	},
-        	<span class='prelude-val'>None</span> <span class='op'>=&gt;</span> <span class='prelude-val'>Err</span>(<span class='ident'>IronError</span>::<span class='ident'>new</span>(<span class='ident'>NoRoute</span>, <span class='ident'>status</span>::<span class='ident'>NotFound</span>))
+        	<span class='ident'>MatchResult</span>::<span class='ident'>Mounted</span>(<span class='ident'>matched</span>) <span class='op'>=&gt;</span> {
+        		<span class='kw'>let</span> <span class='ident'>len</span> <span class='op'>=</span> <span class='ident'>matched</span>.<span class='ident'>params</span>[<span class='ident'>LEFTOVER_PARAM_NAME</span>].<span class='ident'>len</span>();
+            	<span class='kw'>let</span> <span class='ident'>leftover</span> <span class='op'>=</span> <span class='string'>&quot;/&quot;</span>.<span class='ident'>to_string</span>() <span class='op'>+</span> <span class='kw-2'>&amp;</span><span class='ident'>matched</span>.<span class='ident'>params</span>[<span class='ident'>LEFTOVER_PARAM_NAME</span>][<span class='number'>0</span> .. <span class='ident'>len</span> <span class='op'>-</span> <span class='number'>1</span>];
+            	<span class='kw'>let</span> (<span class='ident'>new_path</span>, _, _) <span class='op'>=</span> <span class='ident'>parse_path</span>(<span class='kw-2'>&amp;</span><span class='ident'>leftover</span>).<span class='ident'>unwrap</span>();
+		        <span class='kw'>if</span> <span class='op'>!</span><span class='ident'>req</span>.<span class='ident'>extensions</span>.<span class='ident'>contains</span>::<span class='op'>&lt;</span><span class='ident'>StrippedUrl</span><span class='op'>&gt;</span>() {
+		        	<span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>stripped_url</span> <span class='op'>=</span> <span class='ident'>req</span>.<span class='ident'>url</span>.<span class='ident'>clone</span>();
+		        	<span class='ident'>stripped_url</span>.<span class='ident'>path</span> <span class='op'>=</span> <span class='ident'>new_path</span>;
+		            <span class='ident'>req</span>.<span class='ident'>extensions</span>.<span class='ident'>insert</span>::<span class='op'>&lt;</span><span class='ident'>StrippedUrl</span><span class='op'>&gt;</span>(<span class='ident'>stripped_url</span>);
+		        } <span class='kw'>else</span> {
+		        	<span class='ident'>req</span>.<span class='ident'>extensions</span>.<span class='ident'>get_mut</span>::<span class='op'>&lt;</span><span class='ident'>StrippedUrl</span><span class='op'>&gt;</span>().<span class='ident'>unwrap</span>().<span class='ident'>path</span> <span class='op'>=</span> <span class='ident'>new_path</span>;
+		        }
+            	<span class='ident'>Router</span>::<span class='ident'>append_params</span>(<span class='ident'>req</span>, <span class='kw-2'>&amp;</span><span class='ident'>matched</span>.<span class='ident'>params</span>);
+	            <span class='ident'>matched</span>.<span class='ident'>handler</span>.<span class='ident'>handler</span>.<span class='ident'>handle</span>(<span class='ident'>req</span>)
+        	},
+        	<span class='ident'>MatchResult</span>::<span class='prelude-val'>None</span> <span class='op'>=&gt;</span> <span class='prelude-val'>Err</span>(<span class='ident'>IronError</span>::<span class='ident'>new</span>(<span class='ident'>NoRoute</span>, <span class='ident'>status</span>::<span class='ident'>NotFound</span>))
         }
     }
 }
 
 
-<span class='doccomment'>/// `OriginalUrl` serves as a key in request extensions to original url if router strips url for</span>
-<span class='doccomment'>/// mounted handlers.</span>
+<span class='doccomment'>/// `StrippedUrl` serves as a key in request extensions. It contains non-matched part of url if </span>
+<span class='doccomment'>/// route was mounted</span>
 <span class='doccomment'>///</span>
 <span class='doccomment'>/// ```ignore</span>
-<span class='doccomment'>/// let ref original_url = req.extensions.get::&lt;OriginalUrl&gt;()</span>
+<span class='doccomment'>/// let ref stripped_url = req.extensions.get::&lt;StrippedUrl&gt;()</span>
 <span class='doccomment'>/// ```</span>
 <span class='attribute'>#[<span class='ident'>derive</span>(<span class='ident'>Copy</span>, <span class='ident'>Clone</span>)]</span>
-<span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>OriginalUrl</span>;
-<span class='kw'>impl</span> <span class='ident'>Key</span> <span class='kw'>for</span> <span class='ident'>OriginalUrl</span> { <span class='kw'>type</span> <span class='ident'>Value</span> <span class='op'>=</span> <span class='ident'>Url</span>; }
+<span class='kw'>pub</span> <span class='kw'>struct</span> <span class='ident'>StrippedUrl</span>;
+<span class='kw'>impl</span> <span class='ident'>Key</span> <span class='kw'>for</span> <span class='ident'>StrippedUrl</span> { <span class='kw'>type</span> <span class='ident'>Value</span> <span class='op'>=</span> <span class='ident'>Url</span>; }
 
 
 <span class='doccomment'>/// `NoRoute` is error type returned to Iron if no route was matched in Router</span>
@@ -418,6 +470,12 @@
 
 <span class='kw'>impl</span> <span class='ident'>Error</span> <span class='kw'>for</span> <span class='ident'>NoRoute</span> {
     <span class='kw'>fn</span> <span class='ident'>description</span>(<span class='kw-2'>&amp;</span><span class='self'>self</span>) <span class='op'>-&gt;</span> <span class='kw-2'>&amp;</span><span class='ident'>str</span> { <span class='string'>&quot;No Route&quot;</span> }
+}
+
+<span class='kw'>enum</span> <span class='ident'>MatchResult</span><span class='op'>&lt;</span><span class='ident'>T</span><span class='op'>&gt;</span> {
+	<span class='ident'>Direct</span>(<span class='ident'>T</span>),
+	<span class='ident'>Mounted</span>(<span class='ident'>T</span>),
+	<span class='prelude-val'>None</span>,
 }</pre>
 </section>
     <section id='search' class="content hidden"></section>

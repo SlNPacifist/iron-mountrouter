@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="rustdoc">
-    <meta name="description" content="API documentation for the Rust `OriginalUrl` struct in crate `iron_mountrouter`.">
-    <meta name="keywords" content="rust, rustlang, rust-lang, OriginalUrl">
+    <meta name="description" content="API documentation for the Rust `StrippedUrl` struct in crate `iron_mountrouter`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, StrippedUrl">
 
-    <title>iron_mountrouter::OriginalUrl - Rust</title>
+    <title>iron_mountrouter::StrippedUrl - Rust</title>
 
     <link rel="stylesheet" type="text/css" href="../main.css">
 
@@ -26,7 +26,7 @@
 
     <section class="sidebar">
         
-        <p class='location'><a href='index.html'>iron_mountrouter</a></p><script>window.sidebarCurrent = {name: 'OriginalUrl', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+        <p class='location'><a href='index.html'>iron_mountrouter</a></p><script>window.sidebarCurrent = {name: 'StrippedUrl', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
     </section>
 
     <nav class="sub">
@@ -41,19 +41,19 @@
     </nav>
 
     <section id='main' class="content struct">
-<h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>iron_mountrouter</a>::<wbr><a class='struct' href=''>OriginalUrl</a></span><span class='out-of-band'><span id='render-detail'>
+<h1 class='fqn'><span class='in-band'>Struct <a href='index.html'>iron_mountrouter</a>::<wbr><a class='struct' href=''>StrippedUrl</a></span><span class='out-of-band'><span id='render-detail'>
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-744' class='srclink' href='../src/iron_mountrouter/mount_router.rs.html#173' title='goto source code'>[src]</a></span></h1>
-<pre class='rust struct'>pub struct OriginalUrl;</pre><div class='docblock'><p><code>OriginalUrl</code> serves as a key in request extensions to original url if router strips url for
-mounted handlers.</p>
+        </span><a id='src-835' class='srclink' href='../src/iron_mountrouter/mount_router.rs.html#196' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct StrippedUrl;</pre><div class='docblock'><p><code>StrippedUrl</code> serves as a key in request extensions. It contains non-matched part of url if
+route was mounted</p>
 <pre class='rust rust-example-rendered'>
-<span class='kw'>let</span> <span class='kw-2'>ref</span> <span class='ident'>original_url</span> <span class='op'>=</span> <span class='ident'>req</span>.<span class='ident'>extensions</span>.<span class='ident'>get</span>::<span class='op'>&lt;</span><span class='ident'>OriginalUrl</span><span class='op'>&gt;</span>()</pre>
-</div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><code>impl Key for <a class='struct' href='../iron_mountrouter/struct.OriginalUrl.html' title='iron_mountrouter::OriginalUrl'>OriginalUrl</a></code></h3><div class='impl-items'><h4 id='assoc_type.Value' class='type'><code>type Value = <a class='struct' href='http://ironframework.io/core/iron/iron/request/url/struct.Url.html' title='iron::request::url::Url'>Url</a></code></h4>
-</div><h3 id='derived_implementations'>Derived Implementations </h3><h3 class='impl'><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../iron_mountrouter/struct.OriginalUrl.html' title='iron_mountrouter::OriginalUrl'>OriginalUrl</a></code></h3><div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../iron_mountrouter/struct.OriginalUrl.html' title='iron_mountrouter::OriginalUrl'>OriginalUrl</a></code></h4>
+<span class='kw'>let</span> <span class='kw-2'>ref</span> <span class='ident'>stripped_url</span> <span class='op'>=</span> <span class='ident'>req</span>.<span class='ident'>extensions</span>.<span class='ident'>get</span>::<span class='op'>&lt;</span><span class='ident'>StrippedUrl</span><span class='op'>&gt;</span>()</pre>
+</div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><code>impl Key for <a class='struct' href='../iron_mountrouter/struct.StrippedUrl.html' title='iron_mountrouter::StrippedUrl'>StrippedUrl</a></code></h3><div class='impl-items'><h4 id='assoc_type.Value' class='type'><code>type Value = <a class='struct' href='http://ironframework.io/core/iron/iron/request/url/struct.Url.html' title='iron::request::url::Url'>Url</a></code></h4>
+</div><h3 id='derived_implementations'>Derived Implementations </h3><h3 class='impl'><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../iron_mountrouter/struct.StrippedUrl.html' title='iron_mountrouter::StrippedUrl'>StrippedUrl</a></code></h3><div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../iron_mountrouter/struct.StrippedUrl.html' title='iron_mountrouter::StrippedUrl'>StrippedUrl</a></code></h4>
 <h4 id='method.clone_from' class='method'><code>fn <a href='http://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code></h4>
-</div><h3 class='impl'><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/marker/trait.Copy.html' title='core::marker::Copy'>Copy</a> for <a class='struct' href='../iron_mountrouter/struct.OriginalUrl.html' title='iron_mountrouter::OriginalUrl'>OriginalUrl</a></code></h3><div class='impl-items'></div></section>
+</div><h3 class='impl'><code>impl <a class='trait' href='http://doc.rust-lang.org/nightly/core/marker/trait.Copy.html' title='core::marker::Copy'>Copy</a> for <a class='struct' href='../iron_mountrouter/struct.StrippedUrl.html' title='iron_mountrouter::StrippedUrl'>StrippedUrl</a></code></h3><div class='impl-items'></div></section>
     <section id='search' class="content hidden"></section>
 
     <section class="footer"></section>

@@ -45,7 +45,7 @@
             <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
                 [<span class='inner'>&#x2212;</span>]
             </a>
-        </span><a id='src-435' class='srclink' href='../src/iron_mountrouter/mount_router.rs.html#31-33' title='goto source code'>[src]</a></span></h1>
+        </span><a id='src-436' class='srclink' href='../src/iron_mountrouter/mount_router.rs.html#34-37' title='goto source code'>[src]</a></span></h1>
 <pre class='rust struct'>pub struct Router {
     // some fields omitted
 }</pre><div class='docblock'><p><code>Router</code> provides an interface to apply different handlers to different routes as middleware for
@@ -87,19 +87,19 @@ params were captured.</p>
 you will most often use <a href="struct.MethodPicker.html">MethodPicker</a> to pick appropriate
 handler for given http method.</p>
 
-<p>If <code>is_mounted</code> is true, router will strip matched part of the request url. Unlike <a href="http://ironframework.io/doc/mount/index.html">Mount</a> middleware from the Iron&#39;s core bundle, this
-parameter allows you to strip dynamical (e.g. with dynamic params) strings from request
-path. Original url is stored in request extensions using <code>OriginalUrl</code>. For example,</p>
+<p>If <code>is_mounted</code> is true, router will match any string <em>starting</em> with route. Original url is
+preserved, while stripped part is stored in request extensions using <code>StrippedUrl</code>. Further
+<code>Router</code>s will used stripped url to match their routes. For example,</p>
 <pre class='rust rust-example-rendered'>
 <span class='kw'>let</span> <span class='kw-2'>mut</span> <span class='ident'>router</span> <span class='op'>=</span> <span class='ident'>Router</span>::<span class='ident'>new</span>();
 <span class='ident'>router</span>.<span class='ident'>add_route</span>(<span class='string'>&quot;/book/:page/&quot;</span>, <span class='ident'>handler</span>, <span class='boolval'>true</span>);
 <span class='kw'>fn</span> <span class='ident'>handler</span>(<span class='ident'>req</span>: <span class='kw-2'>&amp;</span><span class='kw-2'>mut</span> <span class='ident'>Request</span>) <span class='op'>-&gt;</span> <span class='ident'>IronResult</span><span class='op'>&lt;</span><span class='ident'>Response</span><span class='op'>&gt;</span> {
     <span class='comment'>// for path &quot;/book/17/page/3&quot;</span>
 
-    <span class='comment'>// [&quot;page&quot;, &quot;3&quot;]</span>
-    <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;{:?}&quot;</span>, <span class='ident'>req</span>.<span class='ident'>url</span>.<span class='ident'>path</span>);
     <span class='comment'>// [&quot;book&quot;, &quot;17&quot;, &quot;page&quot;, &quot;3&quot;]</span>
-    <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;{:?}&quot;</span>, <span class='ident'>req</span>.<span class='ident'>extensions</span>.<span class='ident'>get</span>::<span class='op'>&lt;</span><span class='ident'>OriginalUrl</span><span class='op'>&gt;</span>().<span class='ident'>unwrap</span>().<span class='ident'>path</span>);
+    <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;{:?}&quot;</span>, <span class='ident'>req</span>.<span class='ident'>url</span>.<span class='ident'>path</span>);
+    <span class='comment'>// [&quot;page&quot;, &quot;3&quot;]</span>
+    <span class='macro'>println</span><span class='macro'>!</span>(<span class='string'>&quot;{:?}&quot;</span>, <span class='ident'>req</span>.<span class='ident'>extensions</span>.<span class='ident'>get</span>::<span class='op'>&lt;</span><span class='ident'>StrippedUrl</span><span class='op'>&gt;</span>().<span class='ident'>unwrap</span>().<span class='ident'>path</span>);
 }</pre>
 
 <p>If <code>is_mounted</code> is set, route is forced to end with slash: slash is appended to the end of
