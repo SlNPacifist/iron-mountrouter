@@ -9,7 +9,7 @@ use std::io::Read;
 use iron::{Iron, Request, Response, IronResult};
 use iron::headers::ContentType;
 use iron::status;
-use iron_mountrouter::{Router, OriginalUrl};
+use iron_mountrouter::{Router, StrippedUrl};
 
 
 fn get_output(content: &str) -> String {
@@ -37,10 +37,10 @@ fn main() {
 			status::Ok,
 			get_output(
 				&format!(
-					"Url: {:?}\nQuery params: {:?}\nOriginal url: {:?}",
+					"<p>Url: {:?}<p>Query parts: {:?}<p>Stripped url: {:?}",
 					req.url.path,
 					*query,
-					req.extensions.get::<OriginalUrl>()
+					req.extensions.get::<StrippedUrl>()
 				)
 			)
 		));
