@@ -114,3 +114,19 @@ impl fmt::Display for NoMethod {
 impl Error for NoMethod {
     fn description(&self) -> &str { "No method" }
 }
+
+
+/// Create and populate method picker.
+///
+/// ```ignore
+/// let picker = picker!(get => show,
+///                      post => save);
+/// ```
+#[macro_export]
+macro_rules! picker {
+    ($($method:ident => $handler:expr),+ $(,)*) => ({
+        let mut picker = $crate::MethodPicker::new();
+        $(picker.$method($handler);)*
+        picker
+    });
+}
